@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<title>Pastasciutta</title>
+		<!-- The core Firebase JS SDK is always required and must be listed first -->
+		<script src="https://www.gstatic.com/firebasejs/7.4.0/firebase-app.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/7.4.0/firebase-auth.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/7.4.0/firebase-firestore.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.js"></script>
+		<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.css" />
+	</head>
+	<body>
+
+<script>
+	// Your web app's Firebase configuration
+	var firebaseConfig = {
+		apiKey: "AIzaSyDsGwfcJOxtgy5CLZymU6S5VOKqTzPwaV4",
+		authDomain: "pastasciutta-reva.firebaseapp.com",
+		databaseURL: "https://pastasciutta-reva.firebaseio.com",
+		projectId: "pastasciutta-reva",
+		storageBucket: "pastasciutta-reva.appspot.com",
+		messagingSenderId: "355340758400",
+		appId: "1:355340758400:web:1386fc4b2faff79d3b2565"
+	};
+	// Initialize Firebase
+	firebase.initializeApp(firebaseConfig);
+
+	// FirebaseUI config.
+	var uiConfig = {
+		signInSuccessUrl: 'http://localhost:8000/',
+		signInOptions: [
+			// Leave the lines as is for the providers you want to offer your users.
+			firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+			firebase.auth.EmailAuthProvider.PROVIDER_ID,
+			// firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
+		],
+		// tosUrl and privacyPolicyUrl accept either url string or a callback
+		// function.
+		// Terms of service url/callback.
+		tosUrl: '#',
+		// Privacy policy url/callback.
+		privacyPolicyUrl: function() {
+			window.location.assign('#');
+		}
+	};
+
+	// Function to avoid memory leaks on event listeners.
+	var signoutFunction = () => firebase.auth().signOut();
+
+	var initApp = () => {
+		firebase.auth().onAuthStateChanged((user) => {
+			if (user) {
+				// User is signed in.
+				var displayName = user.displayName;
+				var email = user.email;
+				var emailVerified = user.emailVerified;
+				var photoURL = user.photoURL;
+				var uid = user.uid;
+				var phoneNumber = user.phoneNumber;
+				var providerData = user.providerData;
+				user.getIdToken().then(function(accessToken) {
+					document.getElementById('account-details').textContent = JSON.stringify({
+						displayName: displayName,
+						email: email,
+						emailVerified: emailVerified,
+						phoneNumber: phoneNumber,
+						photoURL: photoURL,
+						uid: uid,
+						accessToken: accessToken,
+						providerData: providerData
+					}, null, '  ');
+				});
+
+				// Button to sign out.
+				var signout = document.getElementById('sign-out');
+				signout.addEventListener('click', signoutFunction);
+				signout.hidden = false;
+
+				// List the pizzas in the console.
+				var db = firebase.firestore();
+				db.collection("pizzas").get()
+					.then((querySnapshot) => {
+						querySnapshot.forEach((doc) => {
+							console.log (`${doc.id} => ${JSON.stringify(doc.data(), null, '  ')}`);
+						});
+					});
+			} else {
+				// User not signed in.
+				var signout = document.getElementById('sign-out');
+				signout.hidden = true;
+				signout.removeEventListener('click', signoutFunction);
+				document.getElementById('account-details').textContent = '';
+				// Initialize the FirebaseUI Widget using Firebase.
+				var ui = new firebaseui.auth.AuthUI(firebase.auth());
+				// The start method will wait until the DOM is loaded.
+				ui.start('#firebaseui-auth-container', uiConfig);
+			}
+		}, function(error) {
+			console.log(error);
+		});
+	};
+	window.addEventListener('load', function() {
+		initApp();
+	});
+</script>
+
+		<h1>Choose your pizzas!</h1>
+		<div id="firebaseui-auth-container"></div>
+
+		<button id="sign-out" hidden>Sign out</button>
+		<pre id="account-details"></pre>
+
+	</body>
+</html>
